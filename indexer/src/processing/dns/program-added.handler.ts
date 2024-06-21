@@ -20,7 +20,7 @@ export class ProgramAddedHandler implements IDNSEventHandler {
         id: event.name,
         address: event.program,
         name: event.name,
-        createdBy: eventInfo.source,
+        createdBy: eventInfo.destination,
         dns: storage.getDNS(),
         history: '[]',
         updatedAt: new Date(),
