@@ -7,7 +7,7 @@ import { Block } from "@subsquid/substrate-processor";
 import { EntitiesService } from "./processing/entities.service";
 import { getLocalStorage } from "./processing/storage/local.storage";
 import { BatchService } from "./processing/batch.service";
-import { getDnsEventsParser } from './types/dns.events';
+import { getDnsEventsParser } from "./types/dns.events";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -16,7 +16,7 @@ BigInt.prototype["toJSON"] = function () {
 };
 
 function getBlockDate(
-  block: Block<{ block: { timestamp: boolean }; event: { args: boolean } }>
+  block: Block<{ block: { timestamp: boolean }; event: { args: boolean } }>,
 ) {
   return new Date(block.header.timestamp ?? new Date().getTime());
 }
@@ -25,7 +25,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const localStorage = await getLocalStorage(ctx.store);
   const entitiesService = new EntitiesService(
     localStorage,
-    new BatchService(ctx.store)
+    new BatchService(ctx.store),
   );
   const dnsParser = await getDnsEventsParser();
   const processing = new EventsProcessing(
@@ -35,7 +35,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   );
   const firstBlockDate = getBlockDate(ctx.blocks[0]);
   console.log(
-    `[main] start processing ${ctx.blocks.length} blocks at ${firstBlockDate}.`
+    `[main] start processing ${ctx.blocks.length} blocks at ${firstBlockDate}.`,
   );
   for (const block of ctx.blocks) {
     const { events } = block;

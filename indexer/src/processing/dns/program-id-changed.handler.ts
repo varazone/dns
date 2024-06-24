@@ -8,7 +8,7 @@ export class ProgramIdChangedHandler implements IDNSEventHandler {
   async handle(
     event: ProgramIdChangedEvent,
     eventInfo: EventInfo,
-    storage: EntitiesService
+    storage: EntitiesService,
   ): Promise<void> {
     const program = await storage.getProgram(event.name);
     if (program === undefined) {
@@ -20,10 +20,11 @@ export class ProgramIdChangedHandler implements IDNSEventHandler {
     await storage.setProgram(
       new Program({
         ...program,
+        admin: event.admin,
         address: event.program,
         history: JSON.stringify(newHistory),
         updatedAt: eventInfo.timestamp,
-      })
+      }),
     );
   }
 }

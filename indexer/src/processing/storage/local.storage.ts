@@ -42,6 +42,10 @@ export class LocalStorage implements IStorage {
     this.programs = {};
   }
 
+  async deleteProgram(name: string): Promise<void> {
+    delete this.programs[name];
+  }
+
   async getProgram(program: string): Promise<Program | undefined> {
     if (this.programs[program] !== undefined) {
       return this.programs[program];

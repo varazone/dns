@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 export class EntitiesService {
   constructor(
     private readonly storage: IStorage,
-    private readonly batchService: BatchService
+    private readonly batchService: BatchService,
   ) {}
 
   async saveAll() {
@@ -24,6 +24,11 @@ export class EntitiesService {
   async setDNS(dns: DNS) {
     await this.storage.setDNS(dns);
     this.batchService.addDnsUpdate(dns);
+  }
+
+  async deleteProgram(program: Program) {
+    await this.storage.deleteProgram(program.name);
+    this.batchService.deleteProgram(program);
   }
 
   async setProgram(program: Program) {

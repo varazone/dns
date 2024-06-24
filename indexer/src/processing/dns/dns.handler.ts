@@ -6,6 +6,6 @@ export interface IDNSEventHandler {
   handle(
     event: DnsEvent,
     eventInfo: EventInfo,
-    storage: EntitiesService
+    storage: EntitiesService,
   ): Promise<void>;
 }

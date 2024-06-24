@@ -11,6 +11,9 @@ export class ProgramResponse {
   address: string;
 
   @ApiProperty()
+  admin: string;
+
+  @ApiProperty()
   createdBy: string;
 
   @ApiProperty()

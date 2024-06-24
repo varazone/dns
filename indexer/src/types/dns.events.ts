@@ -1,7 +1,7 @@
 import { Sails, getFnNamePrefix, getServiceNamePrefix } from "sails-js";
 import { readFileSync } from "fs";
 import { HexString } from "@gear-js/api";
-import { ActorId } from "../dns-types/lib";
+import { ActorId, ContractInfo } from "../dns-types/lib";
 
 let instance: DnsEventsParser | undefined;
 
@@ -14,38 +14,34 @@ export async function getDnsEventsParser(): Promise<DnsEventsParser> {
 }
 
 export enum DnsEventType {
-  AdminAdded = "AdminAdded",
-  AdminDeleted = "AdminDeleted",
+  ProgramDeleted = "ProgramDeleted",
   NewProgramAdded = "NewProgramAdded",
   ProgramIdChanged = "ProgramIdChanged",
 }
-
-export type AdminAddedEvent = {
-  type: DnsEventType.AdminAdded;
-  address: string;
-};
-
-export type AdminDeletedEvent = {
-  type: DnsEventType.AdminDeleted;
-  address: string;
-};
 
 export type NewProgramAddedEvent = {
   type: DnsEventType.NewProgramAdded;
   program: string;
   name: string;
+  admin: string;
+  createdAt: Date | null;
 };
 
 export type ProgramIdChangedEvent = {
   type: DnsEventType.ProgramIdChanged;
   program: string;
   name: string;
+  admin: string;
   updatedAt: Date | null;
 };
 
+export type ProgramDeletedEvent = {
+  type: DnsEventType.ProgramDeleted;
+  name: string;
+}
+
 export type DnsEvent =
-  | AdminAddedEvent
-  | AdminDeletedEvent
+  | ProgramDeletedEvent
   | NewProgramAddedEvent
   | ProgramIdChangedEvent;
 
@@ -71,35 +67,41 @@ export class DnsEventsParser {
     const ev =
       this.sails.services[serviceName].events[functionName].decode(payload);
     switch (functionName) {
-      case "AdminAdded": {
-        const event = ev as { new_admin: ActorId };
+      case "ProgramDeleted": {
+        const event = ev as { name: string };
         return {
-          type: DnsEventType.AdminAdded,
-          address: event.new_admin.toString(),
+          type: DnsEventType.ProgramDeleted,
+          name: event.name,
         };
       }
       case "NewProgramAdded": {
         const event = ev as {
           name: string;
-          program_id: ActorId;
+          contract_info: ContractInfo;
         };
         return {
           type: DnsEventType.NewProgramAdded,
-          program: event.program_id.toString(),
+          program: event.contract_info.program_id.toString(),
+          admin: event.contract_info.admin.toString(),
           name: event.name,
+          createdAt: event.contract_info.registration_time
+            ? new Date(event.contract_info.registration_time)
+            : null,
         };
       }
       case "ProgramIdChanged": {
         const event = ev as {
           name: string;
-          program_id: ActorId;
-          date: string;
+          contract_info: ContractInfo;
         };
         return {
           type: DnsEventType.ProgramIdChanged,
-          program: event.program_id.toString(),
+          program: event.contract_info.program_id.toString(),
+          admin: event.contract_info.admin.toString(),
           name: event.name,
-          updatedAt: event.date ? new Date(event.date) : null,
+          updatedAt: event.contract_info.registration_time
+            ? new Date(event.contract_info.registration_time)
+            : null,
         };
       }
     }

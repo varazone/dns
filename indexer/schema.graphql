@@ -1,7 +1,6 @@
 type DNS @entity {
   id: ID!
   address: String!
-  admins: [String!]!
   programs: [Program!]! @derivedFrom(field: "dns")
   events: [Event!]! @derivedFrom(field: "dns")
 }
@@ -14,6 +13,7 @@ type Program @entity {
   dns: DNS!
   createdBy: String!
   history: String!
+  admin: String
   createdAt: DateTime! @index
   updatedAt: DateTime! @index
 }

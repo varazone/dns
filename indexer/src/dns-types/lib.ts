@@ -8,11 +8,25 @@ const ZERO_ADDRESS = u8aToHex(new Uint8Array(32));
 
 export type ActorId = [Array<number | string>];
 
+export interface ContractInfo {
+  admin: ActorId;
+  program_id: ActorId;
+  registration_time: string;
+}
+
 export class Program {
   private registry: TypeRegistry;
-  constructor(public api: GearApi, public programId?: `0x${string}`) {
+  constructor(
+    public api: GearApi,
+    public programId?: `0x${string}`,
+  ) {
     const types: Record<string, any> = {
       ActorId: "([u8; 32])",
+      ContractInfo: {
+        admin: "ActorId",
+        program_id: "ActorId",
+        registration_time: "String",
+      },
     };
 
     this.registry = new TypeRegistry();
@@ -28,7 +42,7 @@ export class Program {
       "New",
       "String",
       "String",
-      code
+      code,
     );
 
     this.programId = builder.programId;
@@ -43,28 +57,16 @@ export class Program {
       "New",
       "String",
       "String",
-      codeId
+      codeId,
     );
 
     this.programId = builder.programId;
     return builder;
   }
 
-  public addAdmin(user: ActorId): TransactionBuilder<null> {
-    return new TransactionBuilder<null>(
-      this.api,
-      this.registry,
-      "send_message",
-      ["AddAdmin", user],
-      "(String, ActorId)",
-      "Null",
-      this.programId
-    );
-  }
-
   public addNewProgram(
     name: string,
-    program_id: ActorId
+    program_id: ActorId,
   ): TransactionBuilder<null> {
     return new TransactionBuilder<null>(
       this.api,
@@ -73,44 +75,77 @@ export class Program {
       ["AddNewProgram", name, program_id],
       "(String, String, ActorId)",
       "Null",
-      this.programId
+      this.programId,
     );
   }
 
   public changeProgramId(
     name: string,
-    program_id: ActorId
+    new_program_id: ActorId,
   ): TransactionBuilder<null> {
     return new TransactionBuilder<null>(
       this.api,
       this.registry,
       "send_message",
-      ["ChangeProgramId", name, program_id],
+      ["ChangeProgramId", name, new_program_id],
       "(String, String, ActorId)",
       "Null",
-      this.programId
+      this.programId,
     );
   }
 
-  public deleteAdmin(user: ActorId): TransactionBuilder<null> {
+  public deleteMe(): TransactionBuilder<null> {
     return new TransactionBuilder<null>(
       this.api,
       this.registry,
       "send_message",
-      ["DeleteAdmin", user],
-      "(String, ActorId)",
+      "DeleteMe",
+      "String",
       "Null",
-      this.programId
+      this.programId,
     );
   }
 
-  public async activeContracts(
+  public deleteProgram(name: string): TransactionBuilder<null> {
+    return new TransactionBuilder<null>(
+      this.api,
+      this.registry,
+      "send_message",
+      ["DeleteProgram", name],
+      "(String, String)",
+      "Null",
+      this.programId,
+    );
+  }
+
+  public async allContracts(
     originAddress: string,
     value?: number | string | bigint,
-    atBlock?: `0x${string}`
-  ): Promise<Array<[string, ActorId]>> {
+    atBlock?: `0x${string}`,
+  ): Promise<Array<[string, ContractInfo]>> {
+    const payload = this.registry.createType("String", "AllContracts").toU8a();
+    const reply = await this.api.message.calculateReply({
+      destination: this.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this.api.blockGasLimit.toBigInt(),
+      at: atBlock || null,
+    });
+    const result = this.registry.createType(
+      "(String, Vec<(String, ContractInfo)>)",
+      reply.payload,
+    );
+    return result[1].toJSON() as unknown as Array<[string, ContractInfo]>;
+  }
+
+  public async getAllAddresses(
+    originAddress: string,
+    value?: number | string | bigint,
+    atBlock?: `0x${string}`,
+  ): Promise<Array<ActorId>> {
     const payload = this.registry
-      .createType("String", "ActiveContracts")
+      .createType("String", "GetAllAddresses")
       .toU8a();
     const reply = await this.api.message.calculateReply({
       destination: this.programId,
@@ -121,39 +156,18 @@ export class Program {
       at: atBlock || null,
     });
     const result = this.registry.createType(
-      "(String, Vec<(String, ActorId)>)",
-      reply.payload
-    );
-    return result[1].toJSON() as unknown as Array<[string, ActorId]>;
-  }
-
-  public async admins(
-    originAddress: string,
-    value?: number | string | bigint,
-    atBlock?: `0x${string}`
-  ): Promise<Array<ActorId>> {
-    const payload = this.registry.createType("String", "Admins").toU8a();
-    const reply = await this.api.message.calculateReply({
-      destination: this.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this.api.blockGasLimit.toBigInt(),
-      at: atBlock || null,
-    });
-    const result = this.registry.createType(
       "(String, Vec<ActorId>)",
-      reply.payload
+      reply.payload,
     );
     return result[1].toJSON() as unknown as Array<ActorId>;
   }
 
-  public async history(
+  public async getAllNames(
     originAddress: string,
     value?: number | string | bigint,
-    atBlock?: `0x${string}`
-  ): Promise<Array<[string, Array<[string, ActorId]>]>> {
-    const payload = this.registry.createType("String", "History").toU8a();
+    atBlock?: `0x${string}`,
+  ): Promise<Array<string>> {
+    const payload = this.registry.createType("String", "GetAllNames").toU8a();
     const reply = await this.api.message.calculateReply({
       destination: this.programId,
       origin: decodeAddress(originAddress),
@@ -163,83 +177,65 @@ export class Program {
       at: atBlock || null,
     });
     const result = this.registry.createType(
-      "(String, Vec<(String, Vec<(String, ActorId)>)>)",
-      reply.payload
+      "(String, Vec<String>)",
+      reply.payload,
     );
-    return result[1].toJSON() as unknown as Array<
-      [string, Array<[string, ActorId]>]
-    >;
+    return result[1].toJSON() as unknown as Array<string>;
   }
 
-  public subscribeToAdminAddedEvent(
-    callback: (data: { new_admin: ActorId }) => void | Promise<void>
-  ): Promise<() => void> {
-    return this.api.gearEvents.subscribeToGearEvent(
-      "UserMessageSent",
-      ({ data: { message } }) => {
-        if (
-          !message.source.eq(this.programId) ||
-          !message.destination.eq(ZERO_ADDRESS)
-        ) {
-          return;
-        }
-
-        const payload = message.payload.toU8a();
-        const [offset, limit] = compactFromU8aLim(payload);
-        const name = this.registry
-          .createType("String", payload.subarray(offset, limit))
-          .toString();
-        if (name === "AdminAdded") {
-          callback(
-            this.registry
-              .createType(
-                '(String, {"new_admin":"ActorId"})',
-                message.payload
-              )[1]
-              .toJSON() as { new_admin: ActorId }
-          );
-        }
-      }
+  public async getContractInfoByName(
+    name: string,
+    originAddress: string,
+    value?: number | string | bigint,
+    atBlock?: `0x${string}`,
+  ): Promise<ContractInfo | null> {
+    const payload = this.registry
+      .createType("(String, String)", ["GetContractInfoByName", name])
+      .toU8a();
+    const reply = await this.api.message.calculateReply({
+      destination: this.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this.api.blockGasLimit.toBigInt(),
+      at: atBlock || null,
+    });
+    const result = this.registry.createType(
+      "(String, Option<ContractInfo>)",
+      reply.payload,
     );
+    return result[1].toJSON() as unknown as ContractInfo | null;
   }
 
-  public subscribeToAdminDeletedEvent(
-    callback: (data: { deleted_admin: ActorId }) => void | Promise<void>
-  ): Promise<() => void> {
-    return this.api.gearEvents.subscribeToGearEvent(
-      "UserMessageSent",
-      ({ data: { message } }) => {
-        if (
-          !message.source.eq(this.programId) ||
-          !message.destination.eq(ZERO_ADDRESS)
-        ) {
-          return;
-        }
-
-        const payload = message.payload.toU8a();
-        const [offset, limit] = compactFromU8aLim(payload);
-        const name = this.registry
-          .createType("String", payload.subarray(offset, limit))
-          .toString();
-        if (name === "AdminDeleted") {
-          callback(
-            this.registry
-              .createType(
-                '(String, {"deleted_admin":"ActorId"})',
-                message.payload
-              )[1]
-              .toJSON() as { deleted_admin: ActorId }
-          );
-        }
-      }
+  public async getNameByProgramId(
+    program_id: ActorId,
+    originAddress: string,
+    value?: number | string | bigint,
+    atBlock?: `0x${string}`,
+  ): Promise<string | null> {
+    const payload = this.registry
+      .createType("(String, ActorId)", ["GetNameByProgramId", program_id])
+      .toU8a();
+    const reply = await this.api.message.calculateReply({
+      destination: this.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this.api.blockGasLimit.toBigInt(),
+      at: atBlock || null,
+    });
+    const result = this.registry.createType(
+      "(String, Option<String>)",
+      reply.payload,
     );
+    return result[1].toJSON() as unknown as string | null;
   }
 
   public subscribeToNewProgramAddedEvent(
     callback: (data: {
       name: string;
-      program_id: ActorId;
-    }) => void | Promise<void>
+      contract_info: ContractInfo;
+    }) => void | Promise<void>,
   ): Promise<() => void> {
     return this.api.gearEvents.subscribeToGearEvent(
       "UserMessageSent",
@@ -260,22 +256,21 @@ export class Program {
           callback(
             this.registry
               .createType(
-                '(String, {"name":"String","program_id":"ActorId"})',
-                message.payload
+                '(String, {"name":"String","contract_info":"ContractInfo"})',
+                message.payload,
               )[1]
-              .toJSON() as { name: string; program_id: ActorId }
+              .toJSON() as { name: string; contract_info: ContractInfo },
           );
         }
-      }
+      },
     );
   }
 
   public subscribeToProgramIdChangedEvent(
     callback: (data: {
       name: string;
-      program_id: ActorId;
-      date: string;
-    }) => void | Promise<void>
+      contract_info: ContractInfo;
+    }) => void | Promise<void>,
   ): Promise<() => void> {
     return this.api.gearEvents.subscribeToGearEvent(
       "UserMessageSent",
@@ -296,13 +291,42 @@ export class Program {
           callback(
             this.registry
               .createType(
-                '(String, {"name":"String","program_id":"ActorId","date":"String"})',
-                message.payload
+                '(String, {"name":"String","contract_info":"ContractInfo"})',
+                message.payload,
               )[1]
-              .toJSON() as { name: string; program_id: ActorId; date: string }
+              .toJSON() as { name: string; contract_info: ContractInfo },
           );
         }
-      }
+      },
+    );
+  }
+
+  public subscribeToProgramDeletedEvent(
+    callback: (data: { name: string }) => void | Promise<void>,
+  ): Promise<() => void> {
+    return this.api.gearEvents.subscribeToGearEvent(
+      "UserMessageSent",
+      ({ data: { message } }) => {
+        if (
+          !message.source.eq(this.programId) ||
+          !message.destination.eq(ZERO_ADDRESS)
+        ) {
+          return;
+        }
+
+        const payload = message.payload.toU8a();
+        const [offset, limit] = compactFromU8aLim(payload);
+        const name = this.registry
+          .createType("String", payload.subarray(offset, limit))
+          .toString();
+        if (name === "ProgramDeleted") {
+          callback(
+            this.registry
+              .createType('(String, {"name":"String"})', message.payload)[1]
+              .toJSON() as { name: string },
+          );
+        }
+      },
     );
   }
 }

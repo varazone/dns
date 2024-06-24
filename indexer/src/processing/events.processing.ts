@@ -2,19 +2,14 @@ import { EventInfo } from "./event-info.type";
 import { EntitiesService } from "./entities.service";
 import { IStorage } from "./storage/storage.inteface";
 import { HexString } from "@gear-js/api";
-import { DnsEvent, DnsEventsParser, DnsEventType } from '../types/dns.events';
-import { IDNSEventHandler } from './dns/dns.handler';
-import { ProgramAddedHandler } from './dns/program-added.handler';
-import { ProgramIdChangedHandler } from './dns/program-id-changed.handler';
-import { AdminAddedHandler } from './dns/admin-added.handler';
-import { AdminDeletedHandler } from './dns/admin-deleted.handler';
+import { DnsEvent, DnsEventsParser, DnsEventType } from "../types/dns.events";
+import { IDNSEventHandler } from "./dns/dns.handler";
+import { ProgramAddedHandler } from "./dns/program-added.handler";
+import { ProgramIdChangedHandler } from "./dns/program-id-changed.handler";
+import { ProgramDeletedHandler } from "./dns/program-deleted.handler";
 
-const dnsEventsToHandler: Record<
-  DnsEventType,
-  IDNSEventHandler | undefined
-> = {
-  [DnsEventType.AdminAdded]: new AdminAddedHandler(),
-  [DnsEventType.AdminDeleted]: new AdminDeletedHandler(),
+const dnsEventsToHandler: Record<DnsEventType, IDNSEventHandler | undefined> = {
+  [DnsEventType.ProgramDeleted]: new ProgramDeletedHandler(),
   [DnsEventType.NewProgramAdded]: new ProgramAddedHandler(),
   [DnsEventType.ProgramIdChanged]: new ProgramIdChangedHandler(),
 };
@@ -32,7 +27,7 @@ export class EventsProcessing {
 
   async handleDnsEvent(
     payload: HexString,
-    eventInfo: EventInfo
+    eventInfo: EventInfo,
   ): Promise<DnsEvent | null> {
     const { blockNumber, messageId } = eventInfo;
     try {
@@ -41,14 +36,14 @@ export class EventsProcessing {
       if (!event) {
         console.warn(
           `${blockNumber}-${messageId}: unknown event type`,
-          payload
+          payload,
         );
         return null;
       }
       console.log(
         `${blockNumber}-${messageId}: detected event: ${
           event.type
-        }\n${JSON.stringify(event)}`
+        }\n${JSON.stringify(event)}`,
       );
       await this.entitiesService
         .addEvent({
@@ -58,27 +53,24 @@ export class EventsProcessing {
           raw: JSON.stringify(
             event,
             (key, value) =>
-              typeof value === "bigint" ? value.toString() : value // return everything else unchanged
+              typeof value === "bigint" ? value.toString() : value, // return everything else unchanged
           ),
           txHash: eventInfo.txHash,
         })
         .catch((err) =>
-          console.error(`${blockNumber}-${messageId}: error adding event`, err)
+          console.error(`${blockNumber}-${messageId}: error adding event`, err),
         );
       const eventHandler = dnsEventsToHandler[event.type];
       if (!eventHandler) {
         console.warn(
-          `${blockNumber}-${messageId}: no event handlers found for ${event.type}`
+          `${blockNumber}-${messageId}: no event handlers found for ${event.type}`,
         );
         return null;
       }
       await eventHandler.handle(event, eventInfo, this.entitiesService);
       return event;
     } catch (e) {
-      console.error(
-        `${blockNumber}-${messageId}: error handling dns event`,
-        e
-      );
+      console.error(`${blockNumber}-${messageId}: error handling dns event`, e);
       return null;
     }
   }

@@ -100,7 +100,7 @@ export const bytes: Marshal<Uint8Array, string> = {
       return (
         "0x" +
         Buffer.from(value.buffer, value.byteOffset, value.byteLength).toString(
-          "hex"
+          "hex",
         )
       );
     }
@@ -146,7 +146,7 @@ export const bigdecimalTransformer = {
 
 export function enumFromJson<E extends object>(
   json: unknown,
-  enumObject: E
+  enumObject: E,
 ): E[keyof E] {
   assert(typeof json == "string", "invalid enum value");
   let val = (enumObject as any)[json];

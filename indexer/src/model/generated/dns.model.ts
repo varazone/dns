@@ -19,9 +19,6 @@ export class DNS {
   @Column_("text", { nullable: false })
   address!: string;
 
-  @Column_("text", { array: true, nullable: false })
-  admins!: string[];
-
   @OneToMany_(() => Program, (e) => e.dns)
   programs!: Program[];
 

@@ -35,6 +35,9 @@ export class Program {
   @Column_("text", { nullable: false })
   history!: string;
 
+  @Column_("text", { nullable: true })
+  admin!: string | undefined | null;
+
   @Index_()
   @Column_("timestamp with time zone", { nullable: false })
   createdAt!: Date;
