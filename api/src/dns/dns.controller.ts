@@ -1,14 +1,24 @@
 import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { DnsService } from './dns.service';
-import { GetProgramsResponse } from './types/programs.response';
 import { ProgramResponse } from './types/program.response';
+import { DnsResponse } from './types/dns.response';
+import { GetProgramsResponse } from './types/programs.response';
 import { ProgramAllRequest } from './types/program-all.request';
 
 @ApiTags('dns')
 @Controller('dns')
 export class DnsController {
-  constructor(private readonly dnsService: DnsService) {}
+  constructor(private readonly dnsService: DnsService) {
+  }
+
+  @Get('contract')
+  @ApiOkResponse({type: DnsResponse})
+  async getDns(): Promise<DnsResponse> {
+    return this.dnsService.getDns().then(res => ({
+      contract: res.address
+    }));
+  }
 
   @Get('')
   @ApiOkResponse({ type: GetProgramsResponse })
@@ -17,7 +27,7 @@ export class DnsController {
   }
 
   @Get('by_name/:name')
-  @ApiOkResponse({ type: ProgramResponse })
+  @ApiOkResponse({type: ProgramResponse})
   async getProgramByName(@Param('name') name: string): Promise<ProgramResponse> {
     const program = await this.dnsService.getProgramByName(name);
     if (!program) {
@@ -27,7 +37,7 @@ export class DnsController {
   }
 
   @Get('by_address/:address')
-  @ApiOkResponse({ type: ProgramResponse })
+  @ApiOkResponse({type: ProgramResponse})
   async getProgramByAddress(@Param('address') address: string): Promise<ProgramResponse> {
     const program = await this.dnsService.getProgramByAddress(address);
     if (!program) {

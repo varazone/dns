@@ -5,10 +5,16 @@ import { ProgramResponse } from './types/program.response';
 import { GetProgramsResponse } from './types/programs.response';
 import { ProgramAllRequest } from './types/program-all.request';
 import { ProgramEntity } from '../entities/program.entity';
+import { DnsEntity } from '../entities/dns.entity';
 
 @Injectable()
 export class DnsService {
-  constructor(@InjectRepository(ProgramEntity) private readonly repo: Repository<ProgramEntity>) {
+  constructor(@InjectRepository(ProgramEntity) private readonly repo: Repository<ProgramEntity>,
+              @InjectRepository(DnsEntity) private readonly dnsRepo: Repository<DnsEntity>) {
+  }
+
+  async getDns(): Promise<DnsEntity> {
+    return this.repo.findOne({});
   }
 
   async getPrograms(request: ProgramAllRequest): Promise<GetProgramsResponse> {
