@@ -14,17 +14,17 @@ export class DnsService {
   }
 
   async getDns(): Promise<DnsEntity> {
-    return this.repo.findOne({});
+    return this.repo.find({where: {}}).then(res => res[0]);
   }
 
   async getPrograms(request: ProgramAllRequest): Promise<GetProgramsResponse> {
     const builder = this.repo.createQueryBuilder('o');
     builder.where('1=1')
     if (request.search) {
-      builder.andWhere('(o.name ILIKE :search or o.address ILIKE :search)', { search: `%${request.search}%` });
+      builder.andWhere('(o.name ILIKE :search or o.address ILIKE :search)', {search: `%${request.search}%`});
     }
     if (request.createdBy) {
-      builder.andWhere('o.createdBy = :createdBy', { createdBy: request.createdBy });
+      builder.andWhere('o.createdBy = :createdBy', {createdBy: request.createdBy});
     }
     const limit = request.limit || 10;
     const offset = request.offset || 0;
