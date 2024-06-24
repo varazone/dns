@@ -14,7 +14,7 @@ export class DnsService {
   }
 
   async getDns(): Promise<DnsEntity> {
-    return this.repo.find({where: {}}).then(res => res[0]);
+    return this.dnsRepo.find({where: {}}).then(res => res[0]);
   }
 
   async getPrograms(request: ProgramAllRequest): Promise<GetProgramsResponse> {
