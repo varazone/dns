@@ -21,7 +21,7 @@ export class ProgramAddedHandler implements IDNSEventHandler {
         address: event.program,
         name: event.name,
         admin: event.admin,
-        createdBy: eventInfo.destination,
+        createdBy: event.admin,
         dns: storage.getDNS(),
         history: "[]",
         updatedAt: new Date(),
