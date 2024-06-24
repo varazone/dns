@@ -3,6 +3,7 @@ import { DnsModule } from './dns/dns.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProgramEntity } from './entities/program.entity';
+import { DnsEntity } from './entities/dns.entity';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { ProgramEntity } from './entities/program.entity';
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
-      entities: [ProgramEntity],
+      entities: [ProgramEntity, DnsEntity],
       synchronize: false,
     }),
     DnsModule,
