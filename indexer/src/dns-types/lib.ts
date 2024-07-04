@@ -6,11 +6,9 @@ import { u8aToHex, compactFromU8aLim } from "@polkadot/util";
 
 const ZERO_ADDRESS = u8aToHex(new Uint8Array(32));
 
-export type ActorId = [Array<number | string>];
-
 export interface ContractInfo {
-  admin: ActorId;
-  program_id: ActorId;
+  admins: Array<`0x${string}` | Uint8Array>;
+  program_id: `0x${string}` | Uint8Array;
   registration_time: string;
 }
 
@@ -21,10 +19,9 @@ export class Program {
     public programId?: `0x${string}`,
   ) {
     const types: Record<string, any> = {
-      ActorId: "([u8; 32])",
       ContractInfo: {
-        admin: "ActorId",
-        program_id: "ActorId",
+        admins: "Vec<[u8;32]>",
+        program_id: "[u8;32]",
         registration_time: "String",
       },
     };
@@ -64,16 +61,31 @@ export class Program {
     return builder;
   }
 
+  public addAdminToProgram(
+    name: string,
+    new_admin: `0x${string}` | Uint8Array,
+  ): TransactionBuilder<null> {
+    return new TransactionBuilder<null>(
+      this.api,
+      this.registry,
+      "send_message",
+      ["AddAdminToProgram", name, new_admin],
+      "(String, String, [u8;32])",
+      "Null",
+      this.programId,
+    );
+  }
+
   public addNewProgram(
     name: string,
-    program_id: ActorId,
+    program_id: `0x${string}` | Uint8Array,
   ): TransactionBuilder<null> {
     return new TransactionBuilder<null>(
       this.api,
       this.registry,
       "send_message",
       ["AddNewProgram", name, program_id],
-      "(String, String, ActorId)",
+      "(String, String, [u8;32])",
       "Null",
       this.programId,
     );
@@ -81,14 +93,14 @@ export class Program {
 
   public changeProgramId(
     name: string,
-    new_program_id: ActorId,
+    new_program_id: `0x${string}` | Uint8Array,
   ): TransactionBuilder<null> {
     return new TransactionBuilder<null>(
       this.api,
       this.registry,
       "send_message",
       ["ChangeProgramId", name, new_program_id],
-      "(String, String, ActorId)",
+      "(String, String, [u8;32])",
       "Null",
       this.programId,
     );
@@ -113,6 +125,21 @@ export class Program {
       "send_message",
       ["DeleteProgram", name],
       "(String, String)",
+      "Null",
+      this.programId,
+    );
+  }
+
+  public removeAdminFromProgram(
+    name: string,
+    admin_to_remove: `0x${string}` | Uint8Array,
+  ): TransactionBuilder<null> {
+    return new TransactionBuilder<null>(
+      this.api,
+      this.registry,
+      "send_message",
+      ["RemoveAdminFromProgram", name, admin_to_remove],
+      "(String, String, [u8;32])",
       "Null",
       this.programId,
     );
@@ -143,7 +170,7 @@ export class Program {
     originAddress: string,
     value?: number | string | bigint,
     atBlock?: `0x${string}`,
-  ): Promise<Array<ActorId>> {
+  ): Promise<Array<`0x${string}` | Uint8Array>> {
     const payload = this.registry
       .createType("String", "GetAllAddresses")
       .toU8a();
@@ -156,10 +183,10 @@ export class Program {
       at: atBlock || null,
     });
     const result = this.registry.createType(
-      "(String, Vec<ActorId>)",
+      "(String, Vec<[u8;32]>)",
       reply.payload,
     );
-    return result[1].toJSON() as unknown as Array<ActorId>;
+    return result[1].toJSON() as unknown as Array<`0x${string}` | Uint8Array>;
   }
 
   public async getAllNames(
@@ -208,13 +235,13 @@ export class Program {
   }
 
   public async getNameByProgramId(
-    program_id: ActorId,
+    program_id: `0x${string}` | Uint8Array,
     originAddress: string,
     value?: number | string | bigint,
     atBlock?: `0x${string}`,
   ): Promise<string | null> {
     const payload = this.registry
-      .createType("(String, ActorId)", ["GetNameByProgramId", program_id])
+      .createType("(String, [u8;32])", ["GetNameByProgramId", program_id])
       .toU8a();
     const reply = await this.api.message.calculateReply({
       destination: this.programId,
@@ -324,6 +351,76 @@ export class Program {
             this.registry
               .createType('(String, {"name":"String"})', message.payload)[1]
               .toJSON() as { name: string },
+          );
+        }
+      },
+    );
+  }
+
+  public subscribeToAdminAddedEvent(
+    callback: (data: {
+      name: string;
+      contract_info: ContractInfo;
+    }) => void | Promise<void>,
+  ): Promise<() => void> {
+    return this.api.gearEvents.subscribeToGearEvent(
+      "UserMessageSent",
+      ({ data: { message } }) => {
+        if (
+          !message.source.eq(this.programId) ||
+          !message.destination.eq(ZERO_ADDRESS)
+        ) {
+          return;
+        }
+
+        const payload = message.payload.toU8a();
+        const [offset, limit] = compactFromU8aLim(payload);
+        const name = this.registry
+          .createType("String", payload.subarray(offset, limit))
+          .toString();
+        if (name === "AdminAdded") {
+          callback(
+            this.registry
+              .createType(
+                '(String, {"name":"String","contract_info":"ContractInfo"})',
+                message.payload,
+              )[1]
+              .toJSON() as { name: string; contract_info: ContractInfo },
+          );
+        }
+      },
+    );
+  }
+
+  public subscribeToAdminRemovedEvent(
+    callback: (data: {
+      name: string;
+      contract_info: ContractInfo;
+    }) => void | Promise<void>,
+  ): Promise<() => void> {
+    return this.api.gearEvents.subscribeToGearEvent(
+      "UserMessageSent",
+      ({ data: { message } }) => {
+        if (
+          !message.source.eq(this.programId) ||
+          !message.destination.eq(ZERO_ADDRESS)
+        ) {
+          return;
+        }
+
+        const payload = message.payload.toU8a();
+        const [offset, limit] = compactFromU8aLim(payload);
+        const name = this.registry
+          .createType("String", payload.subarray(offset, limit))
+          .toString();
+        if (name === "AdminRemoved") {
+          callback(
+            this.registry
+              .createType(
+                '(String, {"name":"String","contract_info":"ContractInfo"})',
+                message.payload,
+              )[1]
+              .toJSON() as { name: string; contract_info: ContractInfo },
           );
         }
       },

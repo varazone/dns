@@ -11,8 +11,8 @@ export class BatchService {
 
   async saveAll() {
     await this.store.save(this.dns);
-      if (this.programsToDelete.length) {
-    await this.store.remove(this.programsToDelete)
+    if (this.programsToDelete.length) {
+      await this.store.remove(this.programsToDelete);
     }
     await Promise.all([
       this.store.save(this.programs),
@@ -46,6 +46,6 @@ export class BatchService {
   }
 
   deleteProgram(program: Program) {
-    this.programsToDelete.push(program)
+    this.programsToDelete.push(program);
   }
 }

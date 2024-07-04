@@ -7,11 +7,15 @@ import { IDNSEventHandler } from "./dns/dns.handler";
 import { ProgramAddedHandler } from "./dns/program-added.handler";
 import { ProgramIdChangedHandler } from "./dns/program-id-changed.handler";
 import { ProgramDeletedHandler } from "./dns/program-deleted.handler";
+import { AdminAddedHandler } from "./dns/admin-added.handler";
+import { AdminRemovedHandler } from "./dns/admin-removed.handler";
 
 const dnsEventsToHandler: Record<DnsEventType, IDNSEventHandler | undefined> = {
   [DnsEventType.ProgramDeleted]: new ProgramDeletedHandler(),
   [DnsEventType.NewProgramAdded]: new ProgramAddedHandler(),
   [DnsEventType.ProgramIdChanged]: new ProgramIdChangedHandler(),
+  [DnsEventType.AdminAdded]: new AdminAddedHandler(),
+  [DnsEventType.AdminRemoved]: new AdminRemovedHandler(),
 };
 
 export class EventsProcessing {

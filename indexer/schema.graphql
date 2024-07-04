@@ -13,7 +13,7 @@ type Program @entity {
   dns: DNS!
   createdBy: String!
   history: String!
-  admin: String
+  admins: [String!]!
   createdAt: DateTime! @index
   updatedAt: DateTime! @index
 }

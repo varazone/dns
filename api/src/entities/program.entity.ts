@@ -16,8 +16,8 @@ export class ProgramEntity {
   @Column("text", { nullable: false })
   name!: string;
 
-  @Column("text", { nullable: true })
-  admin!: string | undefined | null;
+  @Column("text", { array: true, nullable: false })
+  admins!: string[];
 
   @Column("text", { nullable: false })
   address!: string;

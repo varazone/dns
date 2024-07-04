@@ -57,7 +57,7 @@ export class DnsService {
     return {
       id: program.id,
       name: program.name,
-      admin: program.admin,
+      admins: program.admins,
       createdBy: program.createdBy,
       address: program.address,
       createdAt: program.createdAt,

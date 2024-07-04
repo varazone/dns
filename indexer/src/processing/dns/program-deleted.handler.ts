@@ -1,7 +1,7 @@
 import { EntitiesService } from "../entities.service";
 import { EventInfo } from "../event-info.type";
 import { IDNSEventHandler } from "./dns.handler";
-import { ProgramDeletedEvent } from '../../types/dns.events';
+import { ProgramDeletedEvent } from "../../types/dns.events";
 
 export class ProgramDeletedHandler implements IDNSEventHandler {
   async handle(
