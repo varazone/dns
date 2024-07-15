@@ -61,6 +61,11 @@ export type DnsEvent =
   | AdminAddedEvent
   | AdminRemovedEvent;
 
+type ContractInfoChangedPayload = {
+  name: string;
+  contract_info: ContractInfo;
+}
+
 export class DnsEventsParser {
   private sails?: Sails;
 
@@ -91,10 +96,7 @@ export class DnsEventsParser {
         };
       }
       case "NewProgramAdded": {
-        const event = ev as {
-          name: string;
-          contract_info: ContractInfo;
-        };
+        const event = ev as ContractInfoChangedPayload;
         return {
           type: DnsEventType.NewProgramAdded,
           program: event.contract_info.program_id.toString(),
@@ -106,10 +108,7 @@ export class DnsEventsParser {
         };
       }
       case "ProgramIdChanged": {
-        const event = ev as {
-          name: string;
-          contract_info: ContractInfo;
-        };
+        const event = ev as ContractInfoChangedPayload;
         return {
           type: DnsEventType.ProgramIdChanged,
           program: event.contract_info.program_id.toString(),
@@ -132,10 +131,7 @@ export class DnsEventsParser {
         };
       }
       case "AdminRemoved": {
-        const event = ev as {
-          name: string;
-          contract_info: ContractInfo;
-        };
+        const event = ev as ContractInfoChangedPayload;
         return {
           type: DnsEventType.AdminRemoved,
           admins: event.contract_info.admins.map((a) => a.toString()),
