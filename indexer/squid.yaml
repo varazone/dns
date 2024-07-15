@@ -12,7 +12,3 @@ deploy:
       - process:prod
     env:
       RPC_ENDPOINT: ${{ secrets.RPC_ENDPOINT }}
-  api:
-    cmd:
-      - sqd
-      - serve:prod
