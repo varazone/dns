@@ -46,7 +46,6 @@ pub fn get_state_all_contracts(dns: &Program) {
     println!("\nstate {:?}", state);
 }
 
-
 #[test]
 fn test_add_new_program() {
     let sys = System::new();

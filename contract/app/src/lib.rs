@@ -1,6 +1,6 @@
 #![no_std]
 
-use sails_rtl::gstd::gprogram;
+use sails::gstd::gprogram;
 
 pub mod service;
 
@@ -9,11 +9,11 @@ pub struct Program(());
 #[gprogram]
 impl Program {
     pub fn new() -> Self {
-        service::GstdDrivenService::seed();
+        service::Service::seed();
         Self(())
     }
 
-    pub fn dns(&self) -> service::GstdDrivenService {
-        service::GstdDrivenService::new()
+    pub fn dns(&self) -> service::Service {
+        service::Service::new()
     }
 }

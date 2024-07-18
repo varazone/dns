@@ -1,8 +1,6 @@
-use core::marker::PhantomData;
 use gstd::collections::HashMap;
 use gstd::{exec, msg, prelude::*, ActorId, Decode, Encode, String, TypeInfo};
-use sails_rtl::gstd::events::{EventTrigger, GStdEventTrigger};
-use sails_rtl::gstd::gservice;
+use sails::gstd::gservice;
 
 pub type Time = String;
 static mut DATA: Option<DnsData> = None;
@@ -25,6 +23,14 @@ pub enum Event {
     ProgramDeleted {
         name: String,
     },
+    AdminAdded {
+        name: String,
+        contract_info: ContractInfo,
+    },
+    AdminRemoved {
+        name: String,
+        contract_info: ContractInfo,
+    }
 }
 
 #[derive(Debug)]
@@ -34,7 +40,7 @@ pub struct DnsData {
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Encode, Decode, TypeInfo)]
 pub struct ContractInfo {
-    pub admin: ActorId,
+    pub admins: Vec<ActorId>,
     pub program_id: ActorId,
     pub registration_time: String,
 }
@@ -48,29 +54,24 @@ impl DnsData {
     }
 }
 
-pub type GstdDrivenService = Service<GStdEventTrigger<Event>>;
-
 #[derive(Clone)]
-pub struct Service<X>(PhantomData<X>);
+pub struct Service;
 
-impl<X> Service<X> {
+impl Service {
     pub fn seed() -> Self {
         unsafe {
             DATA = Some(DnsData {
                 active_contracts: HashMap::new(),
             });
         }
-        Self(PhantomData)
+        Self
     }
 }
 
-#[gservice]
-impl<X> Service<X>
-where
-    X: EventTrigger<Event>,
-{
+#[gservice(events = Event)]
+impl Service {
     pub fn new() -> Self {
-        Self(PhantomData)
+        Self
     }
     pub fn add_new_program(&mut self, name: String, program_id: ActorId) {
         let contract_info = utils::panicking(|| {
@@ -82,7 +83,37 @@ where
                 exec::block_timestamp(),
             )
         });
-        utils::deposit_event(Event::NewProgramAdded {
+        let _ = self.notify_on(Event::NewProgramAdded {
+            name,
+            contract_info,
+        });
+    }
+
+    pub fn add_admin_to_program(&mut self, name: String, new_admin: ActorId) {
+        let contract_info = utils::panicking(|| {
+            funcs::add_admin_to_program(
+                DnsData::get_mut(),
+                name.clone(),
+                new_admin,
+                msg::source(),
+            )
+        });
+        let _ = self.notify_on(Event::AdminAdded {
+            name,
+            contract_info,
+        });
+    }
+
+    pub fn remove_admin_from_program(&mut self, name: String, admin_to_remove: ActorId) {
+        let contract_info = utils::panicking(|| {
+            funcs::remove_admin_from_program(
+                DnsData::get_mut(),
+                name.clone(),
+                admin_to_remove,
+                msg::source(),
+            )
+        });
+        let _ = self.notify_on(Event::AdminRemoved {
             name,
             contract_info,
         });
@@ -97,21 +128,25 @@ where
                 exec::block_timestamp(),
             )
         });
-        utils::deposit_event(Event::ProgramIdChanged {
+        let _ = self.notify_on(Event::ProgramIdChanged {
             name,
             contract_info,
         });
     }
     pub fn delete_program(&mut self, name: String) {
         utils::panicking(|| funcs::delete_program(DnsData::get_mut(), name.clone(), msg::source()));
-        utils::deposit_event(Event::ProgramDeleted { name });
+        let _ = self.notify_on(Event::ProgramDeleted { name });
     }
     pub fn delete_me(&mut self) {
         let name = utils::panicking(|| funcs::delete_me(DnsData::get_mut(), msg::source()));
-        utils::deposit_event(Event::ProgramDeleted { name });
+        let _ = self.notify_on(Event::ProgramDeleted { name });
     }
     pub fn all_contracts(&self) -> Vec<(String, ContractInfo)> {
-        DnsData::get().active_contracts.clone().into_iter().collect()
+        DnsData::get()
+            .active_contracts
+            .clone()
+            .into_iter()
+            .collect()
     }
     pub fn get_contract_info_by_name(&self, name: String) -> Option<ContractInfo> {
         DnsData::get().active_contracts.get(&name).cloned()
@@ -120,11 +155,20 @@ where
         DnsData::get().active_contracts.keys().cloned().collect()
     }
     pub fn get_all_addresses(&self) -> Vec<ActorId> {
-        DnsData::get().active_contracts.values().map(|info| info.program_id.clone()).collect()
+        DnsData::get()
+            .active_contracts
+            .values()
+            .map(|info| info.program_id.clone())
+            .collect()
     }
     pub fn get_name_by_program_id(&self, program_id: ActorId) -> Option<String> {
         let data = DnsData::get();
-        data.active_contracts.iter()
-            .find_map(|(key, info)| if info.program_id == program_id { Some(key.clone()) } else { None })
+        data.active_contracts.iter().find_map(|(key, info)| {
+            if info.program_id == program_id {
+                Some(key.clone())
+            } else {
+                None
+            }
+        })
     }
 }
