@@ -1471,7 +1471,7 @@ dependencies = [
  "gtest",
  "parity-scale-codec",
  "primitive-types",
- "sails",
+ "sails-rs",
  "scale-info",
 ]
 
@@ -4797,9 +4797,45 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 
 [[package]]
-name = "sails"
-version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails#78295551afcb55ac974f4d8dd749672e5c9dc225"
+name = "sails-idl-gen"
+version = "0.2.1"
+source = "git+https://github.com/gear-tech/sails#fad9ed32cba87ce72d6197e9ff8a1d43bdc67d52"
+dependencies = [
+ "convert_case 0.6.0",
+ "handlebars",
+ "sails-rs",
+ "scale-info",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "sails-macros"
+version = "0.2.1"
+source = "git+https://github.com/gear-tech/sails#fad9ed32cba87ce72d6197e9ff8a1d43bdc67d52"
+dependencies = [
+ "proc-macro-error",
+ "sails-macros-core",
+]
+
+[[package]]
+name = "sails-macros-core"
+version = "0.2.1"
+source = "git+https://github.com/gear-tech/sails#fad9ed32cba87ce72d6197e9ff8a1d43bdc67d52"
+dependencies = [
+ "convert_case 0.6.0",
+ "parity-scale-codec",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.66",
+]
+
+[[package]]
+name = "sails-rs"
+version = "0.2.1"
+source = "git+https://github.com/gear-tech/sails#fad9ed32cba87ce72d6197e9ff8a1d43bdc67d52"
 dependencies = [
  "futures",
  "gclient",
@@ -4815,43 +4851,6 @@ dependencies = [
  "scale-info",
  "spin",
  "thiserror-no-std",
-]
-
-[[package]]
-name = "sails-idl-gen"
-version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails#78295551afcb55ac974f4d8dd749672e5c9dc225"
-dependencies = [
- "convert_case 0.6.0",
- "handlebars",
- "sails",
- "scale-info",
- "serde",
- "serde_json",
- "thiserror",
-]
-
-[[package]]
-name = "sails-macros"
-version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails#78295551afcb55ac974f4d8dd749672e5c9dc225"
-dependencies = [
- "proc-macro-error",
- "sails-macros-core",
-]
-
-[[package]]
-name = "sails-macros-core"
-version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails#78295551afcb55ac974f4d8dd749672e5c9dc225"
-dependencies = [
- "const_format",
- "convert_case 0.6.0",
- "parity-scale-codec",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn 2.0.66",
 ]
 
 [[package]]

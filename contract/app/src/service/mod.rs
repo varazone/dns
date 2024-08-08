@@ -1,6 +1,6 @@
 use gstd::collections::HashMap;
 use gstd::{exec, msg, prelude::*, ActorId, Decode, Encode, String, TypeInfo};
-use sails::gstd::gservice;
+use sails_rs::gstd::service;
 
 pub type Time = String;
 static mut DATA: Option<DnsData> = None;
@@ -30,7 +30,7 @@ pub enum Event {
     AdminRemoved {
         name: String,
         contract_info: ContractInfo,
-    }
+    },
 }
 
 #[derive(Debug)]
@@ -68,7 +68,7 @@ impl Service {
     }
 }
 
-#[gservice(events = Event)]
+#[service(events = Event)]
 impl Service {
     pub fn new() -> Self {
         Self
@@ -91,12 +91,7 @@ impl Service {
 
     pub fn add_admin_to_program(&mut self, name: String, new_admin: ActorId) {
         let contract_info = utils::panicking(|| {
-            funcs::add_admin_to_program(
-                DnsData::get_mut(),
-                name.clone(),
-                new_admin,
-                msg::source(),
-            )
+            funcs::add_admin_to_program(DnsData::get_mut(), name.clone(), new_admin, msg::source())
         });
         let _ = self.notify_on(Event::AdminAdded {
             name,

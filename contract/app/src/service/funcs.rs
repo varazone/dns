@@ -35,7 +35,10 @@ pub fn add_admin_to_program(
     new_admin: ActorId,
     source: ActorId,
 ) -> Result<ContractInfo> {
-    let contract_info = data.active_contracts.get_mut(&name).ok_or(Error::Nonexistent)?;
+    let contract_info = data
+        .active_contracts
+        .get_mut(&name)
+        .ok_or(Error::Nonexistent)?;
     if !contract_info.admins.contains(&source) {
         return Err(Error::AccessDenied);
     };
@@ -52,14 +55,19 @@ pub fn remove_admin_from_program(
     admin_to_remove: ActorId,
     source: ActorId,
 ) -> Result<ContractInfo> {
-    let contract_info = data.active_contracts.get_mut(&name).ok_or(Error::Nonexistent)?;
+    let contract_info = data
+        .active_contracts
+        .get_mut(&name)
+        .ok_or(Error::Nonexistent)?;
     if !contract_info.admins.contains(&source) {
         return Err(Error::AccessDenied);
     };
     if contract_info.admins.len() == 1 {
         return Err(Error::MustbBeAtLeastOneAdmin);
     }
-    contract_info.admins.retain(|&admin| admin != admin_to_remove);
+    contract_info
+        .admins
+        .retain(|&admin| admin != admin_to_remove);
     Ok(contract_info.clone())
 }
 
