@@ -13,7 +13,7 @@ scale-info.workspace = true
 chrono-light = { version = "0.1.5", default-features = false }
 
 [build-dependencies]
-gwasm-builder.workspace = true
+gear-wasm-builder.workspace = true
 
 [dev-dependencies]
 gtest.workspace = true

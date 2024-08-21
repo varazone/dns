@@ -3,7 +3,7 @@ use sails_idl_gen::program;
 use std::{env, fs::File, path::PathBuf};
 
 fn main() {
-    gwasm_builder::build();
+    gear_wasm_builder::build();
 
     let manifest_dir_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
